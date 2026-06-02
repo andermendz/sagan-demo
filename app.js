@@ -1,14 +1,11 @@
 /* =====================================================================
-   AW Client Report Portal — single-file app logic (no build step)
-   Flow: Dashboard -> Quarterly form (profile + balances) -> Report preview -> Print
-   Storage: localStorage (manual-entry by design, no external integrations in V1)
+   AW Client Report Portal
+   Flow: Dashboard -> Quarterly form -> Report preview -> Print
    ===================================================================== */
 
 const STORE_KEY = "aw_portal_clients_v1";
 
-/* ---------- Seed data ----------
-   One fully-populated demo client + one lighter one so the dashboard
-   looks real. Numbers are illustrative HNW figures. */
+/* ---------- Seed data ---------- */
 const SEED = [
   {
     id: "c-harrison",
@@ -97,11 +94,32 @@ function upsertClient(client) {
   saveClients(clients);
 }
 
-function resetDemoData() {
-  if (confirm("Are you sure you want to reset all data back to the demo defaults? Any changes you made will be lost.")) {
-    localStorage.removeItem(STORE_KEY);
-    location.reload();
-  }
+function createClient() {
+  const id = "c-" + Date.now().toString(36);
+  const today = new Date().toISOString().slice(0, 10);
+  const client = {
+    id,
+    profile: {
+      client1: "",
+      client2: "",
+      age: "",
+      lastReport: "",
+    },
+    quarter: {
+      reportDate: today,
+      monthlyInflow: 0,
+      monthlyOutflow: 0,
+      insuranceDeductibles: 0,
+      privateReserveBalance: 0,
+      client1Retirement: [{ label: "", amount: 0 }],
+      client2Retirement: [],
+      nonRetirement: [{ label: "", amount: 0 }],
+      trust: [],
+      liabilities: [],
+    },
+  };
+  upsertClient(client);
+  location.hash = "#/client/" + id;
 }
 
 /* ---------- Helpers ---------- */
@@ -123,7 +141,7 @@ const initials = (name) =>
 const fmtDate = (d) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—";
 
-/* ---------- Core calculations (deterministic — no AI needed in V1) ---------- */
+/* ---------- Core calculations ---------- */
 function calc(q) {
   const inflow = Number(q.monthlyInflow) || 0;
   const outflow = Number(q.monthlyOutflow) || 0;
@@ -186,24 +204,21 @@ function renderDashboard() {
         </div>
         <div class="net">Net worth <strong>${fmt(k.grandNetWorth)}</strong></div>
         <button class="btn btn-primary" onclick="location.hash='#/client/${c.id}'">
-          Generate Quarterly Report →
+          Prepare Report
         </button>
       </div>`;
     })
     .join("");
 
   app.innerHTML = `
-    <div class="banner no-print">
-      2-hour assessment demo · Core flow: client data → balances → calculations → SACS/TCC preview → print/export
-    </div>
     <div class="page-head" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
       <div>
         <h1>Client Dashboard</h1>
         <p>${clients.length} active client households · quarterly SACS &amp; TCC reporting</p>
       </div>
-      <button class="btn btn-ghost no-print" onclick="resetDemoData()" style="font-size: 13px; padding: 7px 12px; display: inline-flex; align-items: center; gap: 6px;">
-        🔄 Reset Demo Data
-      </button>
+      <div class="dashboard-actions no-print">
+        <button class="btn btn-primary" onclick="createClient()">New Client</button>
+      </div>
     </div>
     <div class="client-grid">${cards}</div>
   `;
@@ -250,9 +265,9 @@ function renderForm(id) {
 
   app.innerHTML = `
     <div class="page-head">
-      <button class="btn btn-ghost no-print" onclick="location.hash='#/dashboard'">← Back to dashboard</button>
+      <button class="btn btn-ghost no-print" onclick="location.hash='#/dashboard'">Back to dashboard</button>
       <h1 style="margin-top:14px;">Quarterly Data Entry</h1>
-      <p>Enter current balances. Sample values are pre-populated — edit any field and calculations update live.</p>
+      <p>Review profile details, update current balances, and generate the quarterly report set.</p>
     </div>
 
     <div id="formAlert"></div>
@@ -318,7 +333,7 @@ function renderForm(id) {
 
     <div class="action-bar no-print">
       <button class="btn btn-ghost" onclick="saveForm('${id}', false)">Save Draft</button>
-      <button class="btn btn-green" onclick="saveForm('${id}', true)">Generate Report →</button>
+      <button class="btn btn-green" onclick="saveForm('${id}', true)">Generate Reports</button>
     </div>
   `;
 
@@ -426,7 +441,7 @@ function saveForm(id, generate) {
     }
 
     if (missing.length) {
-      $("#formAlert").innerHTML = `<div class="alert">⚠️ Please complete required fields before generating: ${missing.join(", ")}.</div>`;
+      $("#formAlert").innerHTML = `<div class="alert">Please complete required fields before generating: ${missing.join(", ")}.</div>`;
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -468,10 +483,10 @@ function renderReport(id) {
   app.innerHTML = `
     <div class="report-toolbar no-print">
       <div class="left">
-        <button class="btn btn-ghost" onclick="location.hash='#/client/${id}'">← Edit balances</button>
+        <button class="btn btn-ghost" onclick="location.hash='#/client/${id}'">Edit balances</button>
         <button class="btn btn-ghost" onclick="location.hash='#/dashboard'">Dashboard</button>
       </div>
-      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
     </div>
 
     <!-- ===== SACS REPORT ===== -->
@@ -555,23 +570,6 @@ function renderReport(id) {
       <div class="liab-note">Liabilities are shown separately and are not subtracted from the grand total net worth, per AW reporting methodology.</div>
     </section>
 
-    <!-- Assessment notes (screen only, hidden in print) -->
-    <section class="section-card notes-card no-print">
-      <h2>Assessment Notes — scoping &amp; tradeoffs</h2>
-      <ul>
-        <li><strong>Manual entry by design:</strong> V1 has no external integrations (Schwab, Plaid, Zillow, RightCapital) due to reliability/compliance concerns stated in the PRD.</li>
-        <li><strong>No AI in V1:</strong> all figures are deterministic calculations — adding AI would add risk without value.</li>
-        <li><strong>Zero-dependency stack:</strong> vanilla HTML/CSS/JS + localStorage. Opens instantly, easy to host, nothing to break in a live demo.</li>
-        <li><strong>Print-to-PDF</strong> used for export instead of a heavy PDF library, to stay within the 2-hour cap.</li>
-        <li><strong>Core value delivered:</strong> eliminates manual math/report assembly and the errors that come with it.</li>
-      </ul>
-      <p style="margin-top:14px; font-size:13.5px; color:var(--fg-soft);">
-        This demo focuses on the core V1 workflow: client profile → quarterly data entry →
-        deterministic calculations → SACS/TCC report preview → print/export. Integrations,
-        Canva export, auth, real database, and pixel-perfect PDF replication were intentionally
-        left out to respect the 2-hour assessment limit.
-      </p>
-    </section>
   `;
 
   animateCounts();

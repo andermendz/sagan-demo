@@ -76,7 +76,7 @@ Data is stored in **localStorage**. To reset to seed data, clear site data / run
 - **Print-to-PDF** over a PDF library — acceptable per PRD and avoids dependency overhead.
 - Single seeded firm; numbers are illustrative HNW figures.
 
-These are also surfaced in-app under **Assessment Notes** on the report screen.
+These are noted here for reviewers; the app UI itself stays focused on the reporting workflow.
 
 ---
 

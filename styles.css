@@ -1,6 +1,4 @@
-/* ===== AW Client Report Portal — styles =====
-   Vercel/Geist-inspired: monochrome base, tight typography,
-   thin borders over heavy shadows, subtle motion. */
+/* ===== AW Client Report Portal styles ===== */
 
 :root {
   /* Neutrals (geist gray scale) */
@@ -95,26 +93,6 @@ main {
 .page-head h1 { margin: 0 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }
 .page-head p { margin: 0; color: var(--muted); font-size: 15px; }
 
-/* Dashboard banner */
-.banner {
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  padding: 10px 16px;
-  font-size: 13.5px;
-  color: var(--fg-soft);
-  margin-bottom: 24px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: var(--shadow-sm);
-}
-.banner::before {
-  content: "✨";
-  font-size: 14px;
-}
-
 .footer {
   text-align: center;
   color: var(--muted);
@@ -138,6 +116,12 @@ main {
 .btn-ghost:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
 .btn-green { background: var(--green); color: #fff; }
 .btn-green:hover { filter: brightness(1.05); box-shadow: var(--shadow-md); }
+
+.dashboard-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 
 /* ===== Client cards ===== */
 .client-grid {
@@ -370,10 +354,6 @@ main {
   font-size: 12px; color: var(--muted); font-style: italic; margin-top: 10px;
 }
 
-.notes-card { background: var(--amber-soft); border-color: #fde68a; }
-.notes-card ul { margin: 8px 0 0; padding-left: 20px; }
-.notes-card li { margin-bottom: 6px; font-size: 13.5px; color: var(--fg-soft); }
-
 /* ===== Motion ===== */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
@@ -412,5 +392,4 @@ main {
     page-break-after: always;
   }
   .report-sheet:last-of-type { page-break-after: auto; }
-  .notes-card { display: none; }
 }
