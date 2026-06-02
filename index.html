@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AW Client Report Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top navigation bar (hidden when printing) -->
+  <header class="topbar no-print">
+    <div class="brand">
+      <div class="brand-mark">AW</div>
+      <div>
+        <div class="brand-title">Client Report Portal</div>
+        <div class="brand-sub">Quarterly SACS &amp; TCC Reporting</div>
+      </div>
+    </div>
+    <nav class="topnav">
+      <button class="nav-btn" data-nav="dashboard">Dashboard</button>
+      <span class="nav-hint" id="navContext"></span>
+    </nav>
+  </header>
+
+  <main id="app"><!-- Views render here --></main>
+
+  <footer class="footer no-print">
+    AW Client Report Portal — internal demo. Manual-entry by design (V1). All data stored locally in your browser.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
