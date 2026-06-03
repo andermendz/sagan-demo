@@ -13,6 +13,11 @@ const SEED = [
       client1: "Robert Harrison",
       client2: "Margaret Harrison",
       age: 58,
+      client1Dob: "1968-04-12",
+      client1Ssn4: "4821",
+      client2Age: 56,
+      client2Dob: "1970-08-24",
+      client2Ssn4: "9157",
       lastReport: "2026-03-31",
     },
     quarter: {
@@ -50,6 +55,11 @@ const SEED = [
       client1: "Daniel Chen",
       client2: "",
       age: 46,
+      client1Dob: "1980-01-18",
+      client1Ssn4: "2044",
+      client2Age: "",
+      client2Dob: "",
+      client2Ssn4: "",
       lastReport: "2026-03-15",
     },
     quarter: {
@@ -67,6 +77,30 @@ const SEED = [
   },
 ];
 
+function normalizeClient(client) {
+  const seeded = SEED.find((item) => item.id === client.id);
+  const defaultProfile = {
+    client1: "",
+    client2: "",
+    age: "",
+    client1Dob: "",
+    client1Ssn4: "",
+    client2Age: "",
+    client2Dob: "",
+    client2Ssn4: "",
+    lastReport: "",
+  };
+
+  return {
+    ...client,
+    profile: {
+      ...defaultProfile,
+      ...(seeded ? seeded.profile : {}),
+      ...(client.profile || {}),
+    },
+  };
+}
+
 /* ---------- Persistence ---------- */
 function loadClients() {
   const raw = localStorage.getItem(STORE_KEY);
@@ -75,7 +109,9 @@ function loadClients() {
     return structuredClone(SEED);
   }
   try {
-    return JSON.parse(raw);
+    const clients = JSON.parse(raw).map(normalizeClient);
+    localStorage.setItem(STORE_KEY, JSON.stringify(clients));
+    return clients;
   } catch {
     return structuredClone(SEED);
   }
@@ -103,6 +139,11 @@ function createClient() {
       client1: "",
       client2: "",
       age: "",
+      client1Dob: "",
+      client1Ssn4: "",
+      client2Age: "",
+      client2Dob: "",
+      client2Ssn4: "",
       lastReport: "",
     },
     quarter: {
@@ -140,6 +181,7 @@ const initials = (name) =>
     .toUpperCase();
 const fmtDate = (d) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—";
+const ssnLabel = (value) => (value ? "SSN " + value : "SSN —");
 
 /* ---------- Core calculations ---------- */
 function calc(q) {
@@ -174,6 +216,22 @@ function calc(q) {
   };
 }
 
+function countMissingFields(client) {
+  const requiredSelectors = ["#p-client1", "#q-reportDate", "#q-monthlyInflow", "#q-monthlyOutflow"];
+  const missingCore = requiredSelectors.filter((sel) => {
+    const input = $(sel);
+    return input ? input.value.trim() === "" : false;
+  }).length;
+
+  const emptyAccounts = Array.from(app.querySelectorAll(".acct-row")).filter((row) => {
+    const label = row.querySelector('[data-k="label"]');
+    const amount = row.querySelector('[data-k="amount"]');
+    return (label && label.value.trim() === "") || (amount && amount.value.trim() === "");
+  }).length;
+
+  return missingCore + emptyAccounts;
+}
+
 /* ---------- Router ---------- */
 const app = $("#app");
 function setNavContext(text) {
@@ -202,7 +260,7 @@ function renderDashboard() {
           <div class="name">${c.profile.client1}${c.profile.client2 ? " &amp; " + c.profile.client2 : ""}</div>
           <div class="meta">Age ${c.profile.age} · Last report ${fmtDate(c.profile.lastReport)}</div>
         </div>
-        <div class="net">Net worth <strong>${fmt(k.grandNetWorth)}</strong></div>
+        <div class="net">TCC grand total <strong>${fmt(k.grandNetWorth)}</strong></div>
         <button class="btn btn-primary" onclick="location.hash='#/client/${c.id}'">
           Prepare Report
         </button>
@@ -270,6 +328,8 @@ function renderForm(id) {
       <p>Review profile details, update current balances, and generate the quarterly report set.</p>
     </div>
 
+    <div class="form-summary" id="formSummary"></div>
+
     <div id="formAlert"></div>
 
     <!-- Client profile -->
@@ -279,10 +339,20 @@ function renderForm(id) {
       <div class="field-grid">
         <div class="field"><label>Client 1 <span class="req">*</span></label>
           <input type="text" id="p-client1" value="${client.profile.client1}" /></div>
-        <div class="field"><label>Client 2 / Spouse (optional)</label>
-          <input type="text" id="p-client2" value="${client.profile.client2 || ""}" /></div>
-        <div class="field"><label>Age</label>
+        <div class="field"><label>Client 1 DOB</label>
+          <input type="date" id="p-client1Dob" value="${client.profile.client1Dob || ""}" /></div>
+        <div class="field"><label>Client 1 SSN Last 4</label>
+          <input type="text" id="p-client1Ssn4" inputmode="numeric" maxlength="4" value="${client.profile.client1Ssn4 || ""}" /></div>
+        <div class="field"><label>Client 1 Age</label>
           <input type="number" id="p-age" value="${client.profile.age || ""}" /></div>
+        <div class="field"><label>Client 2 / Spouse</label>
+          <input type="text" id="p-client2" value="${client.profile.client2 || ""}" /></div>
+        <div class="field"><label>Client 2 DOB</label>
+          <input type="date" id="p-client2Dob" value="${client.profile.client2Dob || ""}" /></div>
+        <div class="field"><label>Client 2 SSN Last 4</label>
+          <input type="text" id="p-client2Ssn4" inputmode="numeric" maxlength="4" value="${client.profile.client2Ssn4 || ""}" /></div>
+        <div class="field"><label>Client 2 Age</label>
+          <input type="number" id="p-client2Age" value="${client.profile.client2Age || ""}" /></div>
         <div class="field"><label>Report Date <span class="req">*</span></label>
           <input type="date" id="q-reportDate" value="${q.reportDate}" /></div>
       </div>
@@ -355,6 +425,11 @@ function readFormState(id) {
   client.profile.client1 = $("#p-client1").value.trim();
   client.profile.client2 = $("#p-client2").value.trim();
   client.profile.age = Number($("#p-age").value) || "";
+  client.profile.client1Dob = $("#p-client1Dob").value;
+  client.profile.client1Ssn4 = $("#p-client1Ssn4").value.trim();
+  client.profile.client2Age = Number($("#p-client2Age").value) || "";
+  client.profile.client2Dob = $("#p-client2Dob").value;
+  client.profile.client2Ssn4 = $("#p-client2Ssn4").value.trim();
   q.reportDate = $("#q-reportDate").value;
   q.monthlyInflow = Number($("#q-monthlyInflow").value) || 0;
   q.monthlyOutflow = Number($("#q-monthlyOutflow").value) || 0;
@@ -380,6 +455,13 @@ function refreshLiveCalc(id) {
   const client = readFormState(id);
   const k = calc(client.quarter);
   const reserveGap = k.privateReserveBalance - k.privateReserveTarget;
+  const missingCount = countMissingFields(client);
+  $("#formSummary").innerHTML = `
+    <div class="summary-chip"><div class="k">Report date</div><div class="v">${fmtDate(client.quarter.reportDate)}</div></div>
+    <div class="summary-chip"><div class="k">Reserve target</div><div class="v">${fmt(k.privateReserveTarget)}</div></div>
+    <div class="summary-chip"><div class="k">TCC grand total</div><div class="v">${fmt(k.grandNetWorth)}</div></div>
+    <div class="summary-chip ${missingCount ? "needs-attention" : "ready"}"><div class="k">Missing fields</div><div class="v">${missingCount ? missingCount : "Ready"}</div></div>
+  `;
   $("#liveCalc").innerHTML = `
     <div class="calc-pill"><div class="k">SACS Excess (monthly)</div><div class="v">${fmt(k.sacsExcess)}</div></div>
     <div class="calc-pill"><div class="k">Private Reserve Target</div><div class="v">${fmt(k.privateReserveTarget)}</div></div>
@@ -479,6 +561,13 @@ function renderReport(id) {
       </div>`
       )
       .join("");
+  const clientInfoBubble = (name, age, dob, ssn4) => `
+    <div class="client-info-bubble">
+      <div class="info-name">${name || "Client"}</div>
+      <div>Age ${age || "—"}</div>
+      <div>DOB ${fmtDate(dob)}</div>
+      <div>${ssnLabel(ssn4)}</div>
+    </div>`;
 
   app.innerHTML = `
     <div class="report-toolbar no-print">
@@ -544,13 +633,18 @@ function renderReport(id) {
     <section class="report-sheet">
       <div class="report-header">
         <div>
-          <h2 class="r-title">TCC Net Worth Report</h2>
+          <h2 class="r-title">Total Client Chart (TCC)</h2>
           <div class="r-client">${names}</div>
         </div>
         <div class="r-date">
           <div class="r-logo">AW</div>
           <div style="margin-top:8px;">Report date<br/><strong>${fmtDate(q.reportDate)}</strong></div>
         </div>
+      </div>
+
+      <div class="client-info-row">
+        ${clientInfoBubble(client.profile.client1, client.profile.age, client.profile.client1Dob, client.profile.client1Ssn4)}
+        ${client.profile.client2 ? clientInfoBubble(client.profile.client2, client.profile.client2Age, client.profile.client2Dob, client.profile.client2Ssn4) : ""}
       </div>
 
       <div class="tcc-group"><h3>Client 1 Retirement</h3><div class="bubble-row">${bubbles(q.client1Retirement)}</div></div>

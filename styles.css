@@ -192,6 +192,40 @@ main {
 .field input.invalid { border-color: var(--red); background: var(--red-soft); }
 .field .req { color: var(--red); }
 
+.form-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.summary-chip {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+.summary-chip .k {
+  font-size: 12px;
+  color: var(--muted);
+}
+.summary-chip .v {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+}
+.summary-chip.ready {
+  background: var(--green-soft);
+  border-color: #bbf7d0;
+}
+.summary-chip.ready .v { color: var(--green); }
+.summary-chip.needs-attention {
+  background: var(--amber-soft);
+  border-color: #fde68a;
+}
+.summary-chip.needs-attention .v { color: var(--amber); }
+
 /* Repeatable account rows */
 .acct-row {
   display: grid;
@@ -287,12 +321,18 @@ main {
   gap: 14px; flex-wrap: wrap; margin: 8px 0 28px;
 }
 .flow-node {
-  border-radius: 16px; padding: 24px 28px; min-width: 185px;
+  width: 190px; height: 190px;
+  border-radius: 50%;
+  padding: 24px;
   text-align: center; color: #fff;
   box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 .flow-node .label { font-size: 12px; opacity: 0.92; text-transform: uppercase; letter-spacing: 0.06em; }
-.flow-node .amt { font-size: 27px; font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; }
+.flow-node .amt { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; }
 .flow-node .sub { font-size: 12px; opacity: 0.9; margin-top: 5px; }
 .flow-inflow { background: linear-gradient(135deg, #16a34a, #15803d); }
 .flow-outflow { background: linear-gradient(135deg, #e5484d, #c2363a); }
@@ -315,6 +355,34 @@ main {
 .summary-box.warn .v { color: var(--red); }
 
 /* TCC account bubbles */
+.client-info-row {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: 0 0 28px;
+}
+.client-info-bubble {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4d7c0f, #365314);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: var(--shadow-md);
+}
+.client-info-bubble .info-name {
+  font-size: 14px;
+  font-weight: 700;
+  max-width: 112px;
+  margin-bottom: 5px;
+}
 .tcc-group { margin-bottom: 24px; }
 .tcc-group h3 {
   font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em;
