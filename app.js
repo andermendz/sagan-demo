@@ -268,12 +268,16 @@ const app = $("#app");
 function setNavContext(text) {
   $("#navContext").textContent = text || "";
 }
+function scrollPageTop() {
+  requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+}
 function route() {
   const hash = location.hash || "#/dashboard";
   const [, view, id] = hash.split("/");
   if (view === "report" && id) renderReport(id);
   else if (view === "client" && id) renderForm(id);
   else renderDashboard();
+  scrollPageTop();
 }
 window.addEventListener("hashchange", route);
 
