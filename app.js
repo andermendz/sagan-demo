@@ -189,7 +189,12 @@ const escapeHtml = (value) =>
     '"': "&quot;",
     "'": "&#39;",
   }[char]));
-const ssnLabel = (value) => (value ? "SSN " + escapeHtml(value) : "SSN —");
+const ssnLabel = (value) => (value ? "SSN last 4 " + escapeHtml(value) : "SSN last 4 —");
+const fmtRate = (value) => {
+  const rate = Number(value);
+  if (!Number.isFinite(rate)) return "—";
+  return rate.toLocaleString("en-US", { maximumFractionDigits: 2 });
+};
 
 /* ---------- Core calculations ---------- */
 function calc(q) {
@@ -589,7 +594,7 @@ function renderReport(id) {
       <div class="bubble ${liab ? "liab" : ""}">
         <div class="b-type">${escapeHtml(a.label)}</div>
         <div class="b-amt">${fmt(a.amount)}</div>
-        ${liab && a.rate != null ? `<div class="b-rate">${escapeHtml(a.rate)}% interest</div>` : ""}
+        ${liab && a.rate != null ? `<div class="b-rate">${fmtRate(a.rate)}% interest</div>` : ""}
       </div>`
       )
       .join("");
