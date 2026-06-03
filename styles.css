@@ -540,6 +540,10 @@ main {
 
 /* ===== Print ===== */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .no-print { display: none !important; }
   body { background: #fff; }
   main { padding: 0; max-width: none; }
@@ -547,6 +551,39 @@ main {
   .report-sheet {
     box-shadow: none; border: none; padding: 0 0 30px;
     page-break-after: always;
+  }
+  .report-header .r-logo,
+  .brand-mark {
+    background: #171717 !important;
+    color: #fff !important;
+  }
+  .flow-inflow {
+    background: #159447 !important;
+    background-color: #159447 !important;
+    background-image: none !important;
+    color: #fff !important;
+  }
+  .flow-outflow {
+    background: #d63a40 !important;
+    background-color: #d63a40 !important;
+    background-image: none !important;
+    color: #fff !important;
+  }
+  .flow-reserve {
+    background: #0868d8 !important;
+    background-color: #0868d8 !important;
+    background-image: none !important;
+    color: #fff !important;
+  }
+  .client-info-bubble {
+    background: #3f6b12 !important;
+    background-color: #3f6b12 !important;
+    background-image: none !important;
+    color: #fff !important;
+  }
+  .total-card.grand {
+    background: #171717 !important;
+    color: #fff !important;
   }
   .report-sheet:last-of-type { page-break-after: auto; }
 }
