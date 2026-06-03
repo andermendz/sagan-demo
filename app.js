@@ -181,7 +181,15 @@ const initials = (name) =>
     .toUpperCase();
 const fmtDate = (d) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—";
-const ssnLabel = (value) => (value ? "SSN " + value : "SSN —");
+const escapeHtml = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[char]));
+const ssnLabel = (value) => (value ? "SSN " + escapeHtml(value) : "SSN —");
 
 /* ---------- Core calculations ---------- */
 function calc(q) {
@@ -232,6 +240,24 @@ function countMissingFields(client) {
   return missingCore + emptyAccounts;
 }
 
+function markMissingAccountFields() {
+  app.querySelectorAll(".acct-row input").forEach((input) => input.classList.remove("invalid"));
+  let missing = 0;
+  app.querySelectorAll(".acct-row").forEach((row) => {
+    const label = row.querySelector('[data-k="label"]');
+    const amount = row.querySelector('[data-k="amount"]');
+    if (label && label.value.trim() === "") {
+      label.classList.add("invalid");
+      missing += 1;
+    }
+    if (amount && amount.value.trim() === "") {
+      amount.classList.add("invalid");
+      missing += 1;
+    }
+  });
+  return missing;
+}
+
 /* ---------- Router ---------- */
 const app = $("#app");
 function setNavContext(text) {
@@ -253,12 +279,14 @@ function renderDashboard() {
   const cards = clients
     .map((c) => {
       const k = calc(c.quarter);
+      const client1 = escapeHtml(c.profile.client1 || "New client");
+      const client2 = escapeHtml(c.profile.client2 || "");
       return `
       <div class="client-card">
-        <div class="avatar">${initials(c.profile.client1)}</div>
+        <div class="avatar">${escapeHtml(initials(c.profile.client1))}</div>
         <div>
-          <div class="name">${c.profile.client1}${c.profile.client2 ? " &amp; " + c.profile.client2 : ""}</div>
-          <div class="meta">Age ${c.profile.age} · Last report ${fmtDate(c.profile.lastReport)}</div>
+          <div class="name">${client1}${client2 ? " &amp; " + client2 : ""}</div>
+          <div class="meta">Age ${escapeHtml(c.profile.age || "—")} · Last report ${fmtDate(c.profile.lastReport)}</div>
         </div>
         <div class="net">TCC grand total <strong>${fmt(k.grandNetWorth)}</strong></div>
         <button class="btn btn-primary" onclick="location.hash='#/client/${c.id}'">
@@ -289,7 +317,7 @@ function renderForm(id) {
     location.hash = "#/dashboard";
     return;
   }
-  setNavContext("› " + client.profile.client1);
+  setNavContext("› " + (client.profile.client1 || "New client"));
   const q = client.quarter;
 
   const acctRows = (arr, group) =>
@@ -298,10 +326,10 @@ function renderForm(id) {
         (a, i) => `
       <div class="acct-row" data-group="${group}" data-i="${i}">
         <div class="field">
-          <input type="text" value="${a.label}" data-k="label" placeholder="Account name" />
+          <input type="text" value="${escapeHtml(a.label)}" data-k="label" placeholder="Account name" />
         </div>
         <div class="field">
-          <input type="number" value="${a.amount}" data-k="amount" placeholder="0" />
+          <input type="number" value="${escapeHtml(a.amount)}" data-k="amount" placeholder="0" />
         </div>
         <button class="acct-remove" title="Remove" onclick="removeRow('${group}',${i})">×</button>
       </div>`
@@ -313,9 +341,9 @@ function renderForm(id) {
       .map(
         (a, i) => `
       <div class="acct-row liab" data-group="liabilities" data-i="${i}">
-        <div class="field"><input type="text" value="${a.label}" data-k="label" placeholder="Liability" /></div>
-        <div class="field"><input type="number" value="${a.amount}" data-k="amount" placeholder="Balance" /></div>
-        <div class="field"><input type="number" step="0.01" value="${a.rate}" data-k="rate" placeholder="Rate %" /></div>
+        <div class="field"><input type="text" value="${escapeHtml(a.label)}" data-k="label" placeholder="Liability" /></div>
+        <div class="field"><input type="number" value="${escapeHtml(a.amount)}" data-k="amount" placeholder="Balance" /></div>
+        <div class="field"><input type="number" step="0.01" value="${escapeHtml(a.rate)}" data-k="rate" placeholder="Rate %" /></div>
         <button class="acct-remove" title="Remove" onclick="removeRow('liabilities',${i})">×</button>
       </div>`
       )
@@ -338,23 +366,23 @@ function renderForm(id) {
       <p class="section-sub">Static household information.</p>
       <div class="field-grid">
         <div class="field"><label>Client 1 <span class="req">*</span></label>
-          <input type="text" id="p-client1" value="${client.profile.client1}" /></div>
+          <input type="text" id="p-client1" value="${escapeHtml(client.profile.client1)}" /></div>
         <div class="field"><label>Client 1 DOB</label>
-          <input type="date" id="p-client1Dob" value="${client.profile.client1Dob || ""}" /></div>
+          <input type="date" id="p-client1Dob" value="${escapeHtml(client.profile.client1Dob || "")}" /></div>
         <div class="field"><label>Client 1 SSN Last 4</label>
-          <input type="text" id="p-client1Ssn4" inputmode="numeric" maxlength="4" value="${client.profile.client1Ssn4 || ""}" /></div>
+          <input type="text" id="p-client1Ssn4" inputmode="numeric" maxlength="4" value="${escapeHtml(client.profile.client1Ssn4 || "")}" /></div>
         <div class="field"><label>Client 1 Age</label>
-          <input type="number" id="p-age" value="${client.profile.age || ""}" /></div>
+          <input type="number" id="p-age" value="${escapeHtml(client.profile.age || "")}" /></div>
         <div class="field"><label>Client 2 / Spouse</label>
-          <input type="text" id="p-client2" value="${client.profile.client2 || ""}" /></div>
+          <input type="text" id="p-client2" value="${escapeHtml(client.profile.client2 || "")}" /></div>
         <div class="field"><label>Client 2 DOB</label>
-          <input type="date" id="p-client2Dob" value="${client.profile.client2Dob || ""}" /></div>
+          <input type="date" id="p-client2Dob" value="${escapeHtml(client.profile.client2Dob || "")}" /></div>
         <div class="field"><label>Client 2 SSN Last 4</label>
-          <input type="text" id="p-client2Ssn4" inputmode="numeric" maxlength="4" value="${client.profile.client2Ssn4 || ""}" /></div>
+          <input type="text" id="p-client2Ssn4" inputmode="numeric" maxlength="4" value="${escapeHtml(client.profile.client2Ssn4 || "")}" /></div>
         <div class="field"><label>Client 2 Age</label>
-          <input type="number" id="p-client2Age" value="${client.profile.client2Age || ""}" /></div>
+          <input type="number" id="p-client2Age" value="${escapeHtml(client.profile.client2Age || "")}" /></div>
         <div class="field"><label>Report Date <span class="req">*</span></label>
-          <input type="date" id="q-reportDate" value="${q.reportDate}" /></div>
+          <input type="date" id="q-reportDate" value="${escapeHtml(q.reportDate)}" /></div>
       </div>
     </div>
 
@@ -364,13 +392,13 @@ function renderForm(id) {
       <p class="section-sub">Monthly inflow/outflow and reserve position.</p>
       <div class="field-grid">
         <div class="field"><label>Monthly Inflow / Salary <span class="req">*</span></label>
-          <input type="number" id="q-monthlyInflow" value="${q.monthlyInflow}" /></div>
+          <input type="number" id="q-monthlyInflow" value="${escapeHtml(q.monthlyInflow)}" /></div>
         <div class="field"><label>Monthly Outflow / Expenses <span class="req">*</span></label>
-          <input type="number" id="q-monthlyOutflow" value="${q.monthlyOutflow}" /></div>
+          <input type="number" id="q-monthlyOutflow" value="${escapeHtml(q.monthlyOutflow)}" /></div>
         <div class="field"><label>Insurance Deductibles (reserve add-on)</label>
-          <input type="number" id="q-insuranceDeductibles" value="${q.insuranceDeductibles}" /></div>
+          <input type="number" id="q-insuranceDeductibles" value="${escapeHtml(q.insuranceDeductibles)}" /></div>
         <div class="field"><label>Private Reserve Balance</label>
-          <input type="number" id="q-privateReserveBalance" value="${q.privateReserveBalance}" /></div>
+          <input type="number" id="q-privateReserveBalance" value="${escapeHtml(q.privateReserveBalance)}" /></div>
       </div>
       <div class="calc-strip" id="liveCalc"></div>
     </div>
@@ -521,6 +549,10 @@ function saveForm(id, generate) {
       missing.push("Monthly outflow");
       inputs.monthlyOutflow.classList.add("invalid");
     }
+    const missingAccountFields = markMissingAccountFields();
+    if (missingAccountFields) {
+      missing.push("account labels and balances");
+    }
 
     if (missing.length) {
       $("#formAlert").innerHTML = `<div class="alert">Please complete required fields before generating: ${missing.join(", ")}.</div>`;
@@ -541,30 +573,30 @@ function renderReport(id) {
     location.hash = "#/dashboard";
     return;
   }
-  setNavContext("› " + client.profile.client1 + " — Report");
+  setNavContext("› " + (client.profile.client1 || "Client") + " — Report");
   const q = client.quarter;
   const k = calc(q);
   const names = client.profile.client1 + (client.profile.client2 ? " & " + client.profile.client2 : "");
+  const displayNames = escapeHtml(names || "Client");
   const reserveGap = k.privateReserveBalance - k.privateReserveTarget;
 
-  // Render a number that animates (count-up) from 0 to its value on mount.
-  const count = (n) => `<span class="js-count" data-to="${n}">${fmt(0)}</span>`;
+  const count = (n) => fmt(n);
 
   const bubbles = (arr, liab = false) =>
     (arr.length ? arr : [{ label: "— none —", amount: 0 }])
       .map(
         (a) => `
       <div class="bubble ${liab ? "liab" : ""}">
-        <div class="b-type">${a.label}</div>
+        <div class="b-type">${escapeHtml(a.label)}</div>
         <div class="b-amt">${fmt(a.amount)}</div>
-        ${liab && a.rate != null ? `<div class="b-rate">${a.rate}% interest</div>` : ""}
+        ${liab && a.rate != null ? `<div class="b-rate">${escapeHtml(a.rate)}% interest</div>` : ""}
       </div>`
       )
       .join("");
   const clientInfoBubble = (name, age, dob, ssn4) => `
     <div class="client-info-bubble">
-      <div class="info-name">${name || "Client"}</div>
-      <div>Age ${age || "—"}</div>
+      <div class="info-name">${escapeHtml(name || "Client")}</div>
+      <div>Age ${escapeHtml(age || "—")}</div>
       <div>DOB ${fmtDate(dob)}</div>
       <div>${ssnLabel(ssn4)}</div>
     </div>`;
@@ -583,7 +615,7 @@ function renderReport(id) {
       <div class="report-header">
         <div>
           <h2 class="r-title">SACS Cashflow Report</h2>
-          <div class="r-client">${names}</div>
+          <div class="r-client">${displayNames}</div>
         </div>
         <div class="r-date">
           <div class="r-logo">AW</div>
@@ -591,17 +623,23 @@ function renderReport(id) {
         </div>
       </div>
 
-      <div class="cashflow">
+      <div class="cashflow cashflow-sacs">
         <div class="flow-node flow-inflow">
           <div class="label">Monthly Inflow</div>
           <div class="amt">${count(k.inflow)}</div>
         </div>
-        <div class="flow-arrow">→</div>
+        <div class="flow-arrow transfer-arrow">
+          <span>→</span>
+          <small>Automated transfer</small>
+        </div>
         <div class="flow-node flow-outflow">
           <div class="label">Monthly Outflow</div>
           <div class="amt">${count(k.outflow)}</div>
         </div>
-        <div class="flow-arrow">→</div>
+        <div class="reserve-path">
+          <span>↓</span>
+          <small>Excess to reserve</small>
+        </div>
         <div class="flow-node flow-reserve">
           <div class="label">Private Reserve</div>
           <div class="amt">${count(k.privateReserveBalance)}</div>
@@ -634,7 +672,7 @@ function renderReport(id) {
       <div class="report-header">
         <div>
           <h2 class="r-title">Total Client Chart (TCC)</h2>
-          <div class="r-client">${names}</div>
+          <div class="r-client">${displayNames}</div>
         </div>
         <div class="r-date">
           <div class="r-logo">AW</div>
@@ -665,30 +703,6 @@ function renderReport(id) {
     </section>
 
   `;
-
-  animateCounts();
-}
-
-/* Animate every .js-count element from 0 to its data-to value (~700ms ease-out). */
-function animateCounts() {
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  document.querySelectorAll(".js-count").forEach((el) => {
-    const to = Number(el.dataset.to) || 0;
-    if (reduce) {
-      el.textContent = fmt(to);
-      return;
-    }
-    const duration = 700;
-    const start = performance.now();
-    const step = (now) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-      el.textContent = fmt(to * eased);
-      if (t < 1) requestAnimationFrame(step);
-      else el.textContent = fmt(to);
-    };
-    requestAnimationFrame(step);
-  });
 }
 
 /* ---------- Boot ---------- */
